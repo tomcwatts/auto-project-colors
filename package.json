@@ -1,0 +1,305 @@
+{
+  "name": "auto-project-colors",
+  "displayName": "Auto Project Colors",
+  "description": "Automatically identify multiple VS Code projects at a glance. Reads your project favicon and applies its brand color to the title bar, activity bar, and status bar—zero configuration required.",
+  "version": "1.0.0",
+  "publisher": "tomwatts",
+  "author": "Tom Watts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tomcwatts/auto-project-colors"
+  },
+  "bugs": {
+    "url": "https://github.com/tomcwatts/auto-project-colors/issues"
+  },
+  "homepage": "https://github.com/tomcwatts/auto-project-colors/blob/main/README.md",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Themes",
+    "Other"
+  ],
+  "keywords": [
+    "color",
+    "project",
+    "identify",
+    "distinguish",
+    "workspace",
+    "auto",
+    "brand",
+    "window",
+    "theme",
+    "customization"
+  ],
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#2B8A8C",
+    "theme": "dark"
+  },
+  "activationEvents": [
+    "workspaceContains:**/favicon.{ico,png,svg}",
+    "workspaceContains:**/public/favicon.{ico,png,svg}",
+    "workspaceContains:**/app/favicon.{ico,png,svg}",
+    "workspaceContains:**/assets/icon.{png,jpg}",
+    "workspaceContains:**/assets/app-icon.png",
+    "workspaceContains:package.json",
+    "workspaceContains:Gemfile",
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "projectColor.apply",
+        "title": "Apply Project Color",
+        "category": "Auto Project Colors"
+      },
+      {
+        "command": "projectColor.pickIcon",
+        "title": "Pick Icon File Manually",
+        "category": "Auto Project Colors"
+      },
+      {
+        "command": "projectColor.revert",
+        "title": "Revert to Previous Colors",
+        "category": "Auto Project Colors"
+      },
+      {
+        "command": "projectColor.disable",
+        "title": "Disable for This Workspace",
+        "category": "Auto Project Colors"
+      },
+      {
+        "command": "projectColor.regenerate",
+        "title": "Regenerate with Different Strategy",
+        "category": "Auto Project Colors"
+      },
+      {
+        "command": "projectColor.showStatus",
+        "title": "Show Current Color Status",
+        "category": "Auto Project Colors"
+      },
+      {
+        "command": "projectColor.setCustomHex",
+        "title": "Set Custom Color from Hex Code",
+        "category": "Auto Project Colors"
+      },
+      {
+        "command": "projectColor.chooseUISections",
+        "title": "Choose UI Sections to Color",
+        "category": "Auto Project Colors"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "projectColor.apply",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "projectColor.pickIcon",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "projectColor.revert",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "projectColor.disable",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "projectColor.regenerate",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "projectColor.showStatus",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "projectColor.setCustomHex",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "projectColor.chooseUISections",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Auto Project Colors",
+      "properties": {
+        "projectColor.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Enable project color theming for this workspace"
+        },
+        "projectColor.iconSourceMode": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "manual"
+          ],
+          "enumDescriptions": [
+            "Automatically search for favicon in common locations",
+            "Use the path specified in projectColor.iconPath"
+          ],
+          "scope": "resource",
+          "description": "How to find the project icon"
+        },
+        "projectColor.iconPath": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "description": "Explicit path to favicon (relative to workspace root). Used when iconSourceMode is 'manual'"
+        },
+        "projectColor.iconSearchPatterns": {
+          "type": "array",
+          "default": [
+            "favicon.ico",
+            "favicon.png",
+            "favicon.svg",
+            "public/favicon.ico",
+            "public/favicon.png",
+            "public/favicon.svg",
+            "public/icon.png",
+            "app/favicon.ico",
+            "app/favicon.png",
+            "assets/favicon.ico",
+            "assets/favicon.png",
+            "assets/icon.png",
+            "assets/app-icon.png",
+            "src/assets/favicon.png",
+            "src/assets/icon.png",
+            "static/favicon.ico",
+            "static/favicon.png",
+            "resources/favicon.ico",
+            "resources/icon.png",
+            "app/assets/images/favicon.ico",
+            "ios/*/Images.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "scope": "resource",
+          "description": "Glob patterns to search for favicon (in order of priority)"
+        },
+        "projectColor.paletteStrategy": {
+          "type": "string",
+          "default": "dominant",
+          "enum": [
+            "dominant",
+            "vibrant",
+            "muted",
+            "pastel"
+          ],
+          "enumDescriptions": [
+            "Use the most dominant color from the image",
+            "Use a more saturated, vibrant version of the color",
+            "Use a desaturated, muted version of the color",
+            "Use a soft, pastel version of the color"
+          ],
+          "scope": "resource",
+          "description": "Strategy for generating color palette from the extracted color"
+        },
+        "projectColor.contrastTarget": {
+          "type": "number",
+          "default": 4.5,
+          "enum": [
+            3,
+            4.5,
+            7
+          ],
+          "enumDescriptions": [
+            "WCAG AA for large text (3:1)",
+            "WCAG AA for normal text (4.5:1)",
+            "WCAG AAA (7:1)"
+          ],
+          "scope": "resource",
+          "description": "Target WCAG contrast ratio for text readability"
+        },
+        "projectColor.colorTitleBar": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Apply project color to the title bar"
+        },
+        "projectColor.colorActivityBar": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Apply project color to the activity bar"
+        },
+        "projectColor.colorStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Apply project color to the status bar"
+        },
+        "projectColor.colorTabBar": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Apply project color to the active tab (can be intense)"
+        },
+        "projectColor.colorSideBar": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Apply project color to the sidebar background"
+        },
+        "projectColor.notifyOnApply": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Show notification when colors are applied"
+        },
+        "projectColor.maxImageSize": {
+          "type": "number",
+          "default": 5242880,
+          "scope": "resource",
+          "description": "Maximum image file size in bytes (default 5MB). Larger files are skipped"
+        },
+        "projectColor.enableAutomaticDetection": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Automatically apply project color when workspace opens"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.70.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.27.2",
+    "eslint": "^9.39.2",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.52.0"
+  }
+}
