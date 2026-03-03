@@ -29,6 +29,14 @@ Auto Project Colors works automatically—no configuration needed.
 
 Your workspace instantly reflects your project's branding.
 
+**No favicon? No problem.** Many projects don't ship with a favicon—backend services, CLI tools, libraries, personal configs. The extension is still useful:
+
+- **Set a custom hex color** — Run "Set Custom Color from Hex Code" and type any color (e.g. `#E06C75` for a warm red)
+- **Pick any image** — Run "Pick Icon File Manually" to use a logo, avatar, or any image from your machine
+- **Choose a palette style** — Switch between dominant, vibrant, muted, or pastel to get a look you like
+
+Once set, your color persists per workspace—every time you open that project, you'll recognize it instantly.
+
 ### Features
 
 - ✨ **Automatic Detection**: Works with any favicon without manual setup
@@ -196,7 +204,7 @@ Look for your current color code (like `#3498db`) in the bottom-right status bar
 A: Yes. Auto Project Colors scans your local project's favicon. Nothing is sent to the cloud.
 
 ### Q: What if my project doesn't have a favicon?
-A: The extension falls back gracefully. You can manually specify a color in settings (optional).
+A: Use "Set Custom Color from Hex Code" to pick any color, or "Pick Icon File Manually" to point at any image. See the "No favicon?" section above.
 
 ### Q: Can I customize the color?
 A: Yes. While automatic detection is the default, you can manually override colors per project if needed.
