@@ -256,3 +256,85 @@ export function alphaBlend(fg: RGB, bg: RGB, alpha: number): RGB {
         b: Math.round(fg.b * a + bg.b * (1 - a))
     };
 }
+
+/**
+ * Ensures a foreground color (with optional alpha suffix) meets a minimum
+ * contrast ratio against the given background. If it doesn't, returns
+ * white or black (whichever provides better contrast), preserving alpha
+ * semantics when present.
+ *
+ * For alpha-suffixed foregrounds (9-char hex like #ffffffCC), the function:
+ * 1. Computes the effective blended color over the background
+ * 2. Checks if blended contrast meets the minimum ratio
+ * 3. If not, picks white or black and finds the minimum alpha that meets the ratio
+ */
+export function ensureIconContrast(
+    foregroundHex: string,
+    backgroundHex: string,
+    minRatio: number = 4.5
+): string {
+    const bgRgb = hexToRgb(backgroundHex);
+    if (!bgRgb) {
+        return foregroundHex;
+    }
+
+    const hasAlpha = foregroundHex.length === 9 && foregroundHex.startsWith('#');
+
+    if (hasAlpha) {
+        const baseHex = foregroundHex.slice(0, 7);
+        const alphaHex = foregroundHex.slice(7, 9);
+        const alpha = parseInt(alphaHex, 16) / 255;
+
+        const fgRgb = hexToRgb(baseHex);
+        if (!fgRgb) {
+            return foregroundHex;
+        }
+
+        // Check if current alpha-blended color meets contrast
+        const blended = alphaBlend(fgRgb, bgRgb, alpha);
+        const currentRatio = getContrastRatio(blended, bgRgb);
+
+        if (currentRatio >= minRatio) {
+            return foregroundHex;
+        }
+
+        // Pick the better base color (white or black)
+        const bestBase = getContrastingForeground(bgRgb, minRatio);
+        const bestBaseRgb = hexToRgb(bestBase)!;
+
+        // Binary search for the minimum alpha that meets the contrast ratio
+        let lo = 0.0;
+        let hi = 1.0;
+        for (let i = 0; i < 20; i++) {
+            const mid = (lo + hi) / 2;
+            const testBlend = alphaBlend(bestBaseRgb, bgRgb, mid);
+            const testRatio = getContrastRatio(testBlend, bgRgb);
+            if (testRatio >= minRatio) {
+                hi = mid;
+            } else {
+                lo = mid;
+            }
+        }
+
+        // Use the upper bound to ensure we meet the target, with a small safety margin
+        const safeAlpha = Math.min(1.0, hi + 0.01);
+        const alphaInt = Math.min(255, Math.round(safeAlpha * 255));
+        const newAlphaHex = alphaInt.toString(16).padStart(2, '0');
+
+        return bestBase + newAlphaHex;
+    }
+
+    // Non-alpha path
+    const fgRgb = hexToRgb(foregroundHex);
+    if (!fgRgb) {
+        return foregroundHex;
+    }
+
+    const currentRatio = getContrastRatio(fgRgb, bgRgb);
+    if (currentRatio >= minRatio) {
+        return foregroundHex;
+    }
+
+    // Force to white or black
+    return getContrastingForeground(bgRgb, minRatio);
+}

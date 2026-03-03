@@ -11,6 +11,7 @@ import {
     getOptimalTextColor,
     getContrastingForeground,
     alphaBlend,
+    ensureIconContrast,
     RGB
 } from '../utils/colorValidation';
 
@@ -213,6 +214,105 @@ suite('Color Validation Test Suite', () => {
             assert.strictEqual(result.r, 50);
             assert.strictEqual(result.g, 60);
             assert.strictEqual(result.b, 70);
+        });
+    });
+
+    suite('ensureIconContrast', () => {
+        test('should pass through white on very dark background', () => {
+            // White on dark has ~17:1 contrast — well above 4.5
+            const result = ensureIconContrast('#ffffff', '#1a1a1a');
+            assert.strictEqual(result, '#ffffff');
+        });
+
+        test('should pass through black on very light background', () => {
+            // Black on light has ~18:1 contrast
+            const result = ensureIconContrast('#000000', '#f0f0f0');
+            assert.strictEqual(result, '#000000');
+        });
+
+        test('should force white or black on mid-luminance background with bad foreground', () => {
+            // Gray foreground on gray background — very low contrast
+            const result = ensureIconContrast('#888888', '#777777');
+            assert.ok(
+                result === '#ffffff' || result === '#000000',
+                `Expected white or black, got ${result}`
+            );
+            // Verify the result actually meets 4.5:1
+            const fgRgb = hexToRgb(result)!;
+            const bgRgb = hexToRgb('#777777')!;
+            const ratio = getContrastRatio(fgRgb, bgRgb);
+            assert.ok(ratio >= 4.5, `Expected ratio >= 4.5, got ${ratio}`);
+        });
+
+        test('should handle alpha-suffixed foreground that already has good contrast', () => {
+            // White at ~80% on very dark bg — blends to ~204 gray, still good contrast
+            const result = ensureIconContrast('#ffffffcc', '#111111');
+            // Should pass through unchanged since blended result still has good contrast
+            assert.strictEqual(result, '#ffffffcc');
+        });
+
+        test('should fix alpha-suffixed foreground with insufficient contrast', () => {
+            // White at 60% (#99) on mid-gray (#808080):
+            // blends to ~(255*0.6 + 128*0.4) = 204, luminance ~0.58
+            // bg luminance ~0.22, ratio ~3.1:1 — fails 4.5
+            const result = ensureIconContrast('#ffffff99', '#808080');
+            // Should return an alpha-suffixed color that meets 4.5:1
+            assert.ok(result.length === 9, `Expected 9-char hex with alpha, got ${result}`);
+            // Verify blended contrast meets threshold
+            const alphaVal = parseInt(result.slice(7, 9), 16) / 255;
+            const fgRgb = hexToRgb(result.slice(0, 7))!;
+            const bgRgb = hexToRgb('#808080')!;
+            const blended = alphaBlend(fgRgb, bgRgb, alphaVal);
+            const ratio = getContrastRatio(blended, bgRgb);
+            assert.ok(ratio >= 4.5, `Expected blended ratio >= 4.5, got ${ratio}`);
+        });
+
+        test('should handle very dark background', () => {
+            const result = ensureIconContrast('#ffffff', '#0a0a0a');
+            // White on near-black has excellent contrast — pass through
+            assert.strictEqual(result, '#ffffff');
+        });
+
+        test('should handle very light background', () => {
+            const result = ensureIconContrast('#000000', '#fafafa');
+            // Black on near-white has excellent contrast — pass through
+            assert.strictEqual(result, '#000000');
+        });
+
+        test('should handle saturated mid-luminance background', () => {
+            // #e74c3c is a saturated red with mid-range luminance
+            const result = ensureIconContrast('#ffffff', '#e74c3c');
+            const fgRgb = hexToRgb(result.slice(0, 7))!;
+            const bgRgb = hexToRgb('#e74c3c')!;
+            const ratio = getContrastRatio(fgRgb, bgRgb);
+            assert.ok(ratio >= 4.5, `Expected ratio >= 4.5 on saturated red, got ${ratio}`);
+        });
+
+        test('should handle pastel background', () => {
+            // Pastel pink
+            const result = ensureIconContrast('#ffffff', '#f4c2c2');
+            const fgRgb = hexToRgb(result.slice(0, 7))!;
+            const bgRgb = hexToRgb('#f4c2c2')!;
+            const ratio = getContrastRatio(fgRgb, bgRgb);
+            assert.ok(ratio >= 4.5, `Expected ratio >= 4.5 on pastel pink, got ${ratio}`);
+        });
+
+        test('should handle desaturated mid-gray background', () => {
+            // #6b7b8d is a desaturated blue-gray — tricky mid-luminance
+            const result = ensureIconContrast('#ffffff', '#6b7b8d');
+            const fgRgb = hexToRgb(result.slice(0, 7))!;
+            const bgRgb = hexToRgb('#6b7b8d')!;
+            const ratio = getContrastRatio(fgRgb, bgRgb);
+            assert.ok(ratio >= 4.5, `Expected ratio >= 4.5 on desaturated blue-gray, got ${ratio}`);
+        });
+
+        test('should respect custom minRatio parameter', () => {
+            // With high target of 7:1, more aggressive correction
+            const result = ensureIconContrast('#cccccc', '#999999', 7);
+            const fgRgb = hexToRgb(result.slice(0, 7))!;
+            const bgRgb = hexToRgb('#999999')!;
+            const ratio = getContrastRatio(fgRgb, bgRgb);
+            assert.ok(ratio >= 7, `Expected ratio >= 7, got ${ratio}`);
         });
     });
 });
