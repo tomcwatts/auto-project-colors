@@ -9,7 +9,9 @@ import {
     getRelativeLuminance,
     getContrastRatio,
     getOptimalTextColor,
-    getContrastingForeground
+    getContrastingForeground,
+    alphaBlend,
+    RGB
 } from '../utils/colorValidation';
 
 suite('Color Validation Test Suite', () => {
@@ -181,6 +183,36 @@ suite('Color Validation Test Suite', () => {
             // Very light background should get black text
             const lightBg = { r: 240, g: 240, b: 240 };
             assert.strictEqual(getContrastingForeground(lightBg, 4.5), '#000000');
+        });
+    });
+
+    suite('alphaBlend', () => {
+        test('should blend white at 60% opacity over black to ~153 gray', () => {
+            const fg: RGB = { r: 255, g: 255, b: 255 };
+            const bg: RGB = { r: 0, g: 0, b: 0 };
+            const result = alphaBlend(fg, bg, 0.6);
+            // 255 * 0.6 + 0 * 0.4 = 153
+            assert.strictEqual(result.r, 153);
+            assert.strictEqual(result.g, 153);
+            assert.strictEqual(result.b, 153);
+        });
+
+        test('should return foreground at full opacity', () => {
+            const fg: RGB = { r: 100, g: 150, b: 200 };
+            const bg: RGB = { r: 0, g: 0, b: 0 };
+            const result = alphaBlend(fg, bg, 1.0);
+            assert.strictEqual(result.r, 100);
+            assert.strictEqual(result.g, 150);
+            assert.strictEqual(result.b, 200);
+        });
+
+        test('should return background at zero opacity', () => {
+            const fg: RGB = { r: 100, g: 150, b: 200 };
+            const bg: RGB = { r: 50, g: 60, b: 70 };
+            const result = alphaBlend(fg, bg, 0);
+            assert.strictEqual(result.r, 50);
+            assert.strictEqual(result.g, 60);
+            assert.strictEqual(result.b, 70);
         });
     });
 });

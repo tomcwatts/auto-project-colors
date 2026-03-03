@@ -243,3 +243,16 @@ export function withAlpha(hex: string, alpha: number): string {
 
     return normalized + alphaHex;
 }
+
+/**
+ * Alpha-blends a foreground color over a background color.
+ * Returns the effective RGB of the blended result.
+ */
+export function alphaBlend(fg: RGB, bg: RGB, alpha: number): RGB {
+    const a = Math.max(0, Math.min(1, alpha));
+    return {
+        r: Math.round(fg.r * a + bg.r * (1 - a)),
+        g: Math.round(fg.g * a + bg.g * (1 - a)),
+        b: Math.round(fg.b * a + bg.b * (1 - a))
+    };
+}
