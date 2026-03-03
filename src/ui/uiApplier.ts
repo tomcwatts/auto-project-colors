@@ -3,6 +3,7 @@ import { getConfig, ProjectColorConfig } from '../utils/config';
 import { ColorPalette, adjustPaletteForContext } from '../colors/colorGenerator';
 import { getStateManager } from './stateManager';
 import { log, logError } from '../utils/logger';
+import { getGitDir, isGitIgnored, isGitTracked, addToGitExclude } from '../utils/gitHelpers';
 
 // Keys for workbench color customizations
 const COLOR_KEYS = {
@@ -170,6 +171,30 @@ export function getAllManagedColorKeys(): string[] {
 }
 
 /**
+ * Ensures .vscode/settings.json won't dirty git status.
+ * Adds to .git/info/exclude if: git repo + not ignored + not tracked.
+ */
+async function ensureGitExclusion(workspaceFolder: vscode.WorkspaceFolder): Promise<void> {
+    const workspacePath = workspaceFolder.uri.fsPath;
+    const settingsRelPath = '.vscode/settings.json';
+
+    try {
+        const gitDir = await getGitDir(workspacePath);
+        if (!gitDir) { return; }
+
+        if (await isGitIgnored(workspacePath, settingsRelPath)) { return; }
+        if (await isGitTracked(workspacePath, settingsRelPath)) { return; }
+
+        const added = await addToGitExclude(gitDir, settingsRelPath);
+        if (added) {
+            log(`Added ${settingsRelPath} to .git/info/exclude to keep git status clean`);
+        }
+    } catch (error) {
+        log(`Could not configure git exclusion: ${error}`);
+    }
+}
+
+/**
  * Applies project colors to the VS Code UI.
  */
 export async function applyColors(
@@ -206,6 +231,11 @@ export async function applyColors(
         // Build and apply new colors
         const newColors = buildColorCustomizations(palette, config);
         await setColorCustomizations(workspaceFolder, newColors);
+
+        // Fire-and-forget: ensure .vscode/settings.json is excluded from git
+        ensureGitExclusion(workspaceFolder).catch(err =>
+            log(`Git exclusion check failed: ${err}`)
+        );
 
         // Mark colors as applied
         await stateManager.markColorsApplied(workspaceFolder, palette.primary, iconPath);
