@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { generatePalette, generateSimplePalette } from '../colors/colorGenerator';
+import { generatePalette, generateSimplePalette, adjustPaletteForContext } from '../colors/colorGenerator';
 import { isValidHexColor, hexToRgb, getContrastRatio } from '../utils/colorValidation';
 
 suite('Color Generator Test Suite', () => {
@@ -117,6 +117,38 @@ suite('Color Generator Test Suite', () => {
         test('should handle grayscale', () => {
             const palette = generatePalette('#808080', 'dominant', 4.5);
             assert.ok(isValidHexColor(palette.primary));
+        });
+    });
+
+    suite('adjustPaletteForContext - sidebar contrast', () => {
+        test('sidebar foreground should have 4.5:1 contrast against its actual background', () => {
+            const palette = generatePalette('#808080', 'dominant', 4.5);
+            const sideBarColors = adjustPaletteForContext(palette, 'sideBar');
+
+            const fgRgb = hexToRgb(sideBarColors.foreground);
+            const bgRgb = hexToRgb(sideBarColors.background);
+            assert.ok(fgRgb !== null && bgRgb !== null);
+
+            const ratio = getContrastRatio(fgRgb!, bgRgb!);
+            assert.ok(
+                ratio >= 4.5,
+                `Sidebar foreground/background contrast is ${ratio.toFixed(2)}, expected >= 4.5`
+            );
+        });
+
+        test('sidebar foreground should contrast with light primary', () => {
+            const palette = generatePalette('#c0c0c0', 'dominant', 4.5);
+            const sideBarColors = adjustPaletteForContext(palette, 'sideBar');
+
+            const fgRgb = hexToRgb(sideBarColors.foreground);
+            const bgRgb = hexToRgb(sideBarColors.background);
+            assert.ok(fgRgb !== null && bgRgb !== null);
+
+            const ratio = getContrastRatio(fgRgb!, bgRgb!);
+            assert.ok(
+                ratio >= 4.5,
+                `Sidebar foreground/background contrast is ${ratio.toFixed(2)}, expected >= 4.5`
+            );
         });
     });
 });

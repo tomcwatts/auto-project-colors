@@ -136,13 +136,18 @@ export function adjustPaletteForContext(
                 foreground: palette.lightenedForeground
             };
 
-        case 'sideBar':
-            // Sidebar uses a very subtle version - lightened with transparency would be ideal
-            // but we'll use a lighter variant
+        case 'sideBar': {
+            // Sidebar uses a lighter variant — recompute foreground against actual background
+            const sideBarBg = lighten(palette.primary, 0.3);
+            const sideBarBgRgb = hexToRgb(sideBarBg);
+            const sideBarFg = sideBarBgRgb
+                ? getContrastingForeground(sideBarBgRgb, 4.5)
+                : palette.primaryForeground;
             return {
-                background: lighten(palette.primary, 0.3),
-                foreground: palette.primaryForeground
+                background: sideBarBg,
+                foreground: sideBarFg
             };
+        }
 
         default:
             return {
