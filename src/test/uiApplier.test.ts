@@ -1,7 +1,8 @@
 import * as assert from 'assert';
 import { buildColorCustomizations, getAllManagedColorKeys } from '../ui/uiApplier';
 import { ProjectColorConfig } from '../utils/config';
-import { ColorPalette } from '../colors/colorGenerator';
+import { hexToRgb, getContrastRatio, alphaBlend } from '../utils/colorValidation';
+import { ColorPalette, generatePalette } from '../colors/colorGenerator';
 
 const TEST_PALETTE: ColorPalette = {
     primary: '#3498db',
@@ -172,5 +173,150 @@ suite('uiApplier - buildColorCustomizations', () => {
             result['titleBar.inactiveForeground'].length === 9,
             'inactive foreground should be 8-char hex with alpha (# + 6 + 2 = 9 chars)'
         );
+    });
+
+    test('activity bar icon foreground meets 4.5:1 contrast on mid-luminance palette', () => {
+        const midPalette: ColorPalette = {
+            primary: '#808080',
+            primaryForeground: '#000000',
+            darkened: '#6b6b6b',
+            darkenedForeground: '#ffffff',
+            lightened: '#959595',
+            lightenedForeground: '#000000',
+            accent: '#808080',
+            accentForeground: '#000000'
+        };
+        const config = makeConfig({ colorActivityBar: true });
+        const result = buildColorCustomizations(midPalette, config);
+
+        const fgRgb = hexToRgb(result['activityBar.foreground'])!;
+        const bgRgb = hexToRgb(result['activityBar.background'])!;
+        const ratio = getContrastRatio(fgRgb, bgRgb);
+        assert.ok(ratio >= 4.5, `Activity bar foreground contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+    });
+
+    test('activity bar inactive foreground meets 4.5:1 when alpha-blended', () => {
+        const midPalette: ColorPalette = {
+            primary: '#808080',
+            primaryForeground: '#000000',
+            darkened: '#6b6b6b',
+            darkenedForeground: '#ffffff',
+            lightened: '#959595',
+            lightenedForeground: '#000000',
+            accent: '#808080',
+            accentForeground: '#000000'
+        };
+        const config = makeConfig({ colorActivityBar: true });
+        const result = buildColorCustomizations(midPalette, config);
+
+        const inactiveFg = result['activityBar.inactiveForeground'];
+        assert.ok(inactiveFg.length === 9, 'inactive foreground should have alpha suffix');
+
+        const baseHex = inactiveFg.slice(0, 7);
+        const alpha = parseInt(inactiveFg.slice(7, 9), 16) / 255;
+        const fgRgb = hexToRgb(baseHex)!;
+        const bgRgb = hexToRgb(result['activityBar.background'])!;
+        const blended = alphaBlend(fgRgb, bgRgb, alpha);
+        const ratio = getContrastRatio(blended, bgRgb);
+        assert.ok(ratio >= 4.5, `Activity bar inactive blended contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+    });
+
+    test('status bar foreground meets 4.5:1 contrast on tricky palette', () => {
+        const trickPalette: ColorPalette = {
+            primary: '#6b7b8d',
+            primaryForeground: '#ffffff',
+            darkened: '#4d5f71',
+            darkenedForeground: '#ffffff',
+            lightened: '#8999a9',
+            lightenedForeground: '#000000',
+            accent: '#8d7b6b',
+            accentForeground: '#000000'
+        };
+        const config = makeConfig({ colorStatusBar: true });
+        const result = buildColorCustomizations(trickPalette, config);
+
+        const fgRgb = hexToRgb(result['statusBar.foreground'])!;
+        const bgRgb = hexToRgb(result['statusBar.background'])!;
+        const ratio = getContrastRatio(fgRgb, bgRgb);
+        assert.ok(ratio >= 4.5, `Status bar foreground contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+    });
+
+    test('sidebar foreground meets 4.5:1 contrast', () => {
+        const midPalette: ColorPalette = {
+            primary: '#808080',
+            primaryForeground: '#000000',
+            darkened: '#6b6b6b',
+            darkenedForeground: '#ffffff',
+            lightened: '#959595',
+            lightenedForeground: '#000000',
+            accent: '#808080',
+            accentForeground: '#000000'
+        };
+        const config = makeConfig({ colorSideBar: true });
+        const result = buildColorCustomizations(midPalette, config);
+
+        const fgRgb = hexToRgb(result['sideBar.foreground'])!;
+        const bgRgb = hexToRgb(result['sideBar.background'])!;
+        const ratio = getContrastRatio(fgRgb, bgRgb);
+        assert.ok(ratio >= 4.5, `Sidebar foreground contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+    });
+
+    test('title bar inactive foreground meets 4.5:1 when alpha-blended', () => {
+        const midPalette: ColorPalette = {
+            primary: '#808080',
+            primaryForeground: '#000000',
+            darkened: '#6b6b6b',
+            darkenedForeground: '#ffffff',
+            lightened: '#959595',
+            lightenedForeground: '#000000',
+            accent: '#808080',
+            accentForeground: '#000000'
+        };
+        const config = makeConfig({ colorTitleBar: true });
+        const result = buildColorCustomizations(midPalette, config);
+
+        const inactiveFg = result['titleBar.inactiveForeground'];
+        assert.ok(inactiveFg.length === 9, 'inactive foreground should have alpha suffix');
+
+        const baseHex = inactiveFg.slice(0, 7);
+        const alpha = parseInt(inactiveFg.slice(7, 9), 16) / 255;
+        const fgRgb = hexToRgb(baseHex)!;
+        const bgRgb = hexToRgb(result['titleBar.inactiveBackground'])!;
+        const blended = alphaBlend(fgRgb, bgRgb, alpha);
+        const ratio = getContrastRatio(blended, bgRgb);
+        assert.ok(ratio >= 4.5, `Title bar inactive blended contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+    });
+
+    test('all foreground/background pairs meet 4.5:1 across multiple palettes', () => {
+        const trickyColors = ['#808080', '#555555', '#aaaaaa', '#e74c3c', '#2ecc71', '#3498db', '#f39c12'];
+        const fgBgPairs: Array<{ key: string; fgKey: string; bgKey: string }> = [
+            { key: 'activityBar', fgKey: 'activityBar.foreground', bgKey: 'activityBar.background' },
+            { key: 'statusBar', fgKey: 'statusBar.foreground', bgKey: 'statusBar.background' },
+            { key: 'sideBar', fgKey: 'sideBar.foreground', bgKey: 'sideBar.background' },
+        ];
+
+        for (const baseColor of trickyColors) {
+            const palette = generatePalette(baseColor, 'dominant', 4.5);
+            const config = makeConfig({
+                colorActivityBar: true,
+                colorStatusBar: true,
+                colorSideBar: true
+            });
+            const result = buildColorCustomizations(palette, config);
+
+            for (const pair of fgBgPairs) {
+                const fg = result[pair.fgKey];
+                const bg = result[pair.bgKey];
+                if (!fg || !bg) { continue; }
+
+                const fgRgb = hexToRgb(fg.slice(0, 7))!;
+                const bgRgb = hexToRgb(bg)!;
+                const ratio = getContrastRatio(fgRgb, bgRgb);
+                assert.ok(
+                    ratio >= 4.5,
+                    `${pair.fgKey} contrast on base ${baseColor} is ${ratio.toFixed(2)}, expected >= 4.5`
+                );
+            }
+        }
     });
 });

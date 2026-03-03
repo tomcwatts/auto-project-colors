@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { getConfig, ProjectColorConfig } from '../utils/config';
 import { ColorPalette, adjustPaletteForContext } from '../colors/colorGenerator';
+import { ensureIconContrast } from '../utils/colorValidation';
 import { getStateManager } from './stateManager';
 import { log, logError } from '../utils/logger';
 import { getGitDir, isGitIgnored, isGitTracked, addToGitExclude } from '../utils/gitHelpers';
@@ -115,23 +116,33 @@ export function buildColorCustomizations(
     if (config.colorTitleBar) {
         const titleBarColors = adjustPaletteForContext(palette, 'titleBar');
         colors[COLOR_KEYS.titleBar.background] = titleBarColors.background;
-        colors[COLOR_KEYS.titleBar.foreground] = titleBarColors.foreground;
+        colors[COLOR_KEYS.titleBar.foreground] = ensureIconContrast(
+            titleBarColors.foreground, titleBarColors.background
+        );
         colors[COLOR_KEYS.titleBar.inactiveBackground] = titleBarColors.background;
-        colors[COLOR_KEYS.titleBar.inactiveForeground] = titleBarColors.foreground + '99'; // Add alpha for inactive
+        colors[COLOR_KEYS.titleBar.inactiveForeground] = ensureIconContrast(
+            titleBarColors.foreground + '99', titleBarColors.background
+        );
     }
 
     if (config.colorActivityBar) {
         const activityBarColors = adjustPaletteForContext(palette, 'activityBar');
         colors[COLOR_KEYS.activityBar.background] = activityBarColors.background;
-        colors[COLOR_KEYS.activityBar.foreground] = activityBarColors.foreground;
-        colors[COLOR_KEYS.activityBar.inactiveForeground] = activityBarColors.foreground + '99';
+        colors[COLOR_KEYS.activityBar.foreground] = ensureIconContrast(
+            activityBarColors.foreground, activityBarColors.background
+        );
+        colors[COLOR_KEYS.activityBar.inactiveForeground] = ensureIconContrast(
+            activityBarColors.foreground + '99', activityBarColors.background
+        );
         colors[COLOR_KEYS.activityBar.activeBorder] = activityBarColors.foreground;
     }
 
     if (config.colorStatusBar) {
         const statusBarColors = adjustPaletteForContext(palette, 'statusBar');
         colors[COLOR_KEYS.statusBar.background] = statusBarColors.background;
-        colors[COLOR_KEYS.statusBar.foreground] = statusBarColors.foreground;
+        colors[COLOR_KEYS.statusBar.foreground] = ensureIconContrast(
+            statusBarColors.foreground, statusBarColors.background
+        );
         // Keep debugging/no-folder backgrounds similar but slightly different
         colors[COLOR_KEYS.statusBar.noFolderBackground] = palette.darkened;
     }
@@ -139,14 +150,18 @@ export function buildColorCustomizations(
     if (config.colorTabBar) {
         const tabBarColors = adjustPaletteForContext(palette, 'tabBar');
         colors[COLOR_KEYS.tabBar.activeBackground] = tabBarColors.background;
-        colors[COLOR_KEYS.tabBar.activeForeground] = tabBarColors.foreground;
+        colors[COLOR_KEYS.tabBar.activeForeground] = ensureIconContrast(
+            tabBarColors.foreground, tabBarColors.background
+        );
         colors[COLOR_KEYS.tabBar.activeBorderTop] = palette.primary;
     }
 
     if (config.colorSideBar) {
         const sideBarColors = adjustPaletteForContext(palette, 'sideBar');
         colors[COLOR_KEYS.sideBar.background] = sideBarColors.background;
-        colors[COLOR_KEYS.sideBar.foreground] = sideBarColors.foreground;
+        colors[COLOR_KEYS.sideBar.foreground] = ensureIconContrast(
+            sideBarColors.foreground, sideBarColors.background
+        );
     }
 
     // Always apply focus border for consistent accent
