@@ -229,6 +229,45 @@ export function getContrastingForeground(backgroundColor: RGB, contrastTarget: n
 }
 
 /**
+ * Ensures a background is dark enough that white text meets the target contrast ratio.
+ * Always darkens (never lightens) until white contrast is >= target.
+ */
+export function ensureDarkBackground(backgroundHex: string, contrastTarget: number = 7): string {
+    const bgRgb = hexToRgb(backgroundHex);
+    if (!bgRgb) {
+        return backgroundHex;
+    }
+
+    const white: RGB = { r: 255, g: 255, b: 255 };
+    const currentRatio = getContrastRatio(bgRgb, white);
+    if (currentRatio >= contrastTarget) {
+        return backgroundHex;
+    }
+
+    const hsl = rgbToHsl(bgRgb);
+    let low = 0;
+    let high = hsl.l;
+
+    for (let i = 0; i < 20; i++) {
+        const mid = (low + high) / 2;
+        const testRgb = hslToRgb({ ...hsl, l: mid });
+        const ratio = getContrastRatio(testRgb, white);
+        if (ratio >= contrastTarget) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+
+    let adjustedRgb = hslToRgb({ ...hsl, l: Math.max(0, low - 0.01) });
+    if (getContrastRatio(adjustedRgb, white) < contrastTarget) {
+        adjustedRgb = hslToRgb({ ...hsl, l: Math.max(0, low - 0.03) });
+    }
+
+    return rgbToHex(adjustedRgb);
+}
+
+/**
  * Creates a color with adjusted alpha channel.
  */
 export function withAlpha(hex: string, alpha: number): string {

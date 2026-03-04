@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { getConfig, ProjectColorConfig } from '../utils/config';
 import { ColorPalette, adjustPaletteForContext } from '../colors/colorGenerator';
-import { ensureIconContrast } from '../utils/colorValidation';
+import { ensureDarkBackground, ensureIconContrast } from '../utils/colorValidation';
 import { getStateManager } from './stateManager';
 import { log, logError } from '../utils/logger';
 import { getGitDir, isGitIgnored, isGitTracked, addToGitExclude } from '../utils/gitHelpers';
@@ -18,13 +18,17 @@ const COLOR_KEYS = {
         background: 'activityBar.background',
         foreground: 'activityBar.foreground',
         inactiveForeground: 'activityBar.inactiveForeground',
-        activeBorder: 'activityBar.activeBorder'
+        activeBorder: 'activityBar.activeBorder',
+        badgeBackground: 'activityBarBadge.background',
+        badgeForeground: 'activityBarBadge.foreground'
     },
     statusBar: {
         background: 'statusBar.background',
         foreground: 'statusBar.foreground',
         noFolderBackground: 'statusBar.noFolderBackground',
-        debuggingBackground: 'statusBar.debuggingBackground'
+        debuggingBackground: 'statusBar.debuggingBackground',
+        remoteBackground: 'statusBarItem.remoteBackground',
+        remoteForeground: 'statusBarItem.remoteForeground'
     },
     tabBar: {
         activeBackground: 'tab.activeBackground',
@@ -34,12 +38,24 @@ const COLOR_KEYS = {
     },
     sideBar: {
         background: 'sideBar.background',
-        foreground: 'sideBar.foreground'
+        foreground: 'sideBar.foreground',
+        titleForeground: 'sideBarTitle.foreground',
+        sectionHeaderForeground: 'sideBarSectionHeader.foreground',
+        iconForeground: 'icon.foreground',
+        listActiveSelectionForeground: 'list.activeSelectionForeground',
+        listInactiveSelectionForeground: 'list.inactiveSelectionForeground',
+        listHoverForeground: 'list.hoverForeground',
+        listFocusForeground: 'list.focusForeground',
+        listFocusHighlightForeground: 'list.focusHighlightForeground'
     },
     misc: {
         focusBorder: 'focusBorder'
     }
 };
+
+const DARK_BACKGROUND_CONTRAST_TARGET = 7;
+const FOREGROUND_BASE = '#ffffff';
+const INACTIVE_FOREGROUND_BASE = '#ffffff99';
 
 export interface ApplyResult {
     success: boolean;
@@ -115,53 +131,107 @@ export function buildColorCustomizations(
 
     if (config.colorTitleBar) {
         const titleBarColors = adjustPaletteForContext(palette, 'titleBar');
-        colors[COLOR_KEYS.titleBar.background] = titleBarColors.background;
-        colors[COLOR_KEYS.titleBar.foreground] = ensureIconContrast(
-            titleBarColors.foreground, titleBarColors.background
+        const titleBarBackground = ensureDarkBackground(
+            titleBarColors.background,
+            DARK_BACKGROUND_CONTRAST_TARGET
         );
-        colors[COLOR_KEYS.titleBar.inactiveBackground] = titleBarColors.background;
+        colors[COLOR_KEYS.titleBar.background] = titleBarBackground;
+        colors[COLOR_KEYS.titleBar.foreground] = ensureIconContrast(
+            FOREGROUND_BASE,
+            titleBarBackground,
+            DARK_BACKGROUND_CONTRAST_TARGET
+        );
+        colors[COLOR_KEYS.titleBar.inactiveBackground] = titleBarBackground;
         colors[COLOR_KEYS.titleBar.inactiveForeground] = ensureIconContrast(
-            titleBarColors.foreground + '99', titleBarColors.background
+            INACTIVE_FOREGROUND_BASE,
+            titleBarBackground,
+            DARK_BACKGROUND_CONTRAST_TARGET
         );
     }
 
     if (config.colorActivityBar) {
         const activityBarColors = adjustPaletteForContext(palette, 'activityBar');
-        colors[COLOR_KEYS.activityBar.background] = activityBarColors.background;
-        colors[COLOR_KEYS.activityBar.foreground] = ensureIconContrast(
-            activityBarColors.foreground, activityBarColors.background
+        const activityBarBackground = ensureDarkBackground(
+            activityBarColors.background,
+            DARK_BACKGROUND_CONTRAST_TARGET
         );
-        colors[COLOR_KEYS.activityBar.inactiveForeground] = ensureIconContrast(
-            activityBarColors.foreground + '99', activityBarColors.background
+        const activityBarForeground = ensureIconContrast(
+            FOREGROUND_BASE,
+            activityBarBackground,
+            DARK_BACKGROUND_CONTRAST_TARGET
         );
-        colors[COLOR_KEYS.activityBar.activeBorder] = activityBarColors.foreground;
+        const activityBarInactiveForeground = ensureIconContrast(
+            INACTIVE_FOREGROUND_BASE,
+            activityBarBackground,
+            DARK_BACKGROUND_CONTRAST_TARGET
+        );
+        colors[COLOR_KEYS.activityBar.background] = activityBarBackground;
+        colors[COLOR_KEYS.activityBar.foreground] = activityBarForeground;
+        colors[COLOR_KEYS.activityBar.inactiveForeground] = activityBarInactiveForeground;
+        colors[COLOR_KEYS.activityBar.activeBorder] = activityBarForeground;
+        colors[COLOR_KEYS.activityBar.badgeBackground] = activityBarBackground;
+        colors[COLOR_KEYS.activityBar.badgeForeground] = activityBarForeground;
     }
 
     if (config.colorStatusBar) {
         const statusBarColors = adjustPaletteForContext(palette, 'statusBar');
-        colors[COLOR_KEYS.statusBar.background] = statusBarColors.background;
-        colors[COLOR_KEYS.statusBar.foreground] = ensureIconContrast(
-            statusBarColors.foreground, statusBarColors.background
+        const statusBarBackground = ensureDarkBackground(
+            statusBarColors.background,
+            DARK_BACKGROUND_CONTRAST_TARGET
         );
+        const statusBarForeground = ensureIconContrast(
+            FOREGROUND_BASE,
+            statusBarBackground,
+            DARK_BACKGROUND_CONTRAST_TARGET
+        );
+        colors[COLOR_KEYS.statusBar.background] = statusBarBackground;
+        colors[COLOR_KEYS.statusBar.foreground] = statusBarForeground;
         // Keep debugging/no-folder backgrounds similar but slightly different
-        colors[COLOR_KEYS.statusBar.noFolderBackground] = palette.darkened;
+        colors[COLOR_KEYS.statusBar.noFolderBackground] = ensureDarkBackground(
+            palette.darkened,
+            DARK_BACKGROUND_CONTRAST_TARGET
+        );
+        colors[COLOR_KEYS.statusBar.remoteBackground] = statusBarBackground;
+        colors[COLOR_KEYS.statusBar.remoteForeground] = statusBarForeground;
     }
 
     if (config.colorTabBar) {
         const tabBarColors = adjustPaletteForContext(palette, 'tabBar');
-        colors[COLOR_KEYS.tabBar.activeBackground] = tabBarColors.background;
-        colors[COLOR_KEYS.tabBar.activeForeground] = ensureIconContrast(
-            tabBarColors.foreground, tabBarColors.background
+        const tabBarBackground = ensureDarkBackground(
+            tabBarColors.background,
+            DARK_BACKGROUND_CONTRAST_TARGET
         );
-        colors[COLOR_KEYS.tabBar.activeBorderTop] = palette.primary;
+        const tabBarForeground = ensureIconContrast(
+            FOREGROUND_BASE,
+            tabBarBackground,
+            DARK_BACKGROUND_CONTRAST_TARGET
+        );
+        colors[COLOR_KEYS.tabBar.activeBackground] = tabBarBackground;
+        colors[COLOR_KEYS.tabBar.activeForeground] = tabBarForeground;
+        colors[COLOR_KEYS.tabBar.activeBorderTop] = tabBarForeground;
     }
 
     if (config.colorSideBar) {
         const sideBarColors = adjustPaletteForContext(palette, 'sideBar');
-        colors[COLOR_KEYS.sideBar.background] = sideBarColors.background;
-        colors[COLOR_KEYS.sideBar.foreground] = ensureIconContrast(
-            sideBarColors.foreground, sideBarColors.background
+        const sideBarBackground = ensureDarkBackground(
+            sideBarColors.background,
+            DARK_BACKGROUND_CONTRAST_TARGET
         );
+        const sideBarForeground = ensureIconContrast(
+            FOREGROUND_BASE,
+            sideBarBackground,
+            DARK_BACKGROUND_CONTRAST_TARGET
+        );
+        colors[COLOR_KEYS.sideBar.background] = sideBarBackground;
+        colors[COLOR_KEYS.sideBar.foreground] = sideBarForeground;
+        colors[COLOR_KEYS.sideBar.titleForeground] = sideBarForeground;
+        colors[COLOR_KEYS.sideBar.sectionHeaderForeground] = sideBarForeground;
+        colors[COLOR_KEYS.sideBar.iconForeground] = sideBarForeground;
+        colors[COLOR_KEYS.sideBar.listActiveSelectionForeground] = sideBarForeground;
+        colors[COLOR_KEYS.sideBar.listInactiveSelectionForeground] = sideBarForeground;
+        colors[COLOR_KEYS.sideBar.listHoverForeground] = sideBarForeground;
+        colors[COLOR_KEYS.sideBar.listFocusForeground] = sideBarForeground;
+        colors[COLOR_KEYS.sideBar.listFocusHighlightForeground] = sideBarForeground;
     }
 
     // Always apply focus border for consistent accent

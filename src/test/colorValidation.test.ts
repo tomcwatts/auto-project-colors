@@ -11,6 +11,7 @@ import {
     getOptimalTextColor,
     getContrastingForeground,
     alphaBlend,
+    ensureDarkBackground,
     ensureIconContrast,
     RGB
 } from '../utils/colorValidation';
@@ -315,4 +316,28 @@ suite('Color Validation Test Suite', () => {
             assert.ok(ratio >= 7, `Expected ratio >= 7, got ${ratio}`);
         });
     });
+
+    suite('ensureDarkBackground', () => {
+        test('should keep already-dark backgrounds unchanged', () => {
+            const result = ensureDarkBackground('#1a1a1a', 7);
+            assert.strictEqual(result, '#1a1a1a');
+        });
+
+        test('should darken mid-luminance background to meet 7:1 with white', () => {
+            const result = ensureDarkBackground('#808080', 7);
+            const bgRgb = hexToRgb(result)!;
+            const whiteRgb = hexToRgb('#ffffff')!;
+            const ratio = getContrastRatio(bgRgb, whiteRgb);
+            assert.ok(ratio >= 7, `Expected ratio >= 7, got ${ratio}`);
+        });
+
+        test('should darken saturated orange background to meet 7:1 with white', () => {
+            const result = ensureDarkBackground('#ff8c00', 7);
+            const bgRgb = hexToRgb(result)!;
+            const whiteRgb = hexToRgb('#ffffff')!;
+            const ratio = getContrastRatio(bgRgb, whiteRgb);
+            assert.ok(ratio >= 7, `Expected ratio >= 7, got ${ratio}`);
+        });
+    });
+
 });

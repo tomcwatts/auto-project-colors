@@ -4,6 +4,9 @@ import { ProjectColorConfig } from '../utils/config';
 import { hexToRgb, getContrastRatio, alphaBlend } from '../utils/colorValidation';
 import { ColorPalette, generatePalette } from '../colors/colorGenerator';
 
+const DARK_CONTRAST_TARGET = 7;
+const WHITE_HEX = '#ffffff';
+
 const TEST_PALETTE: ColorPalette = {
     primary: '#3498db',
     primaryForeground: '#ffffff',
@@ -14,6 +17,33 @@ const TEST_PALETTE: ColorPalette = {
     accent: '#2ecc71',
     accentForeground: '#000000'
 };
+
+function assertWhiteContrast(backgroundHex: string, label: string): void {
+    const bgRgb = hexToRgb(backgroundHex)!;
+    const whiteRgb = hexToRgb(WHITE_HEX)!;
+    const ratio = getContrastRatio(bgRgb, whiteRgb);
+    assert.ok(
+        ratio >= DARK_CONTRAST_TARGET,
+        `${label} contrast is ${ratio.toFixed(2)}, expected >= ${DARK_CONTRAST_TARGET}`
+    );
+}
+
+function assertAlphaForegroundContrast(
+    foregroundHex: string,
+    backgroundHex: string,
+    label: string
+): void {
+    const baseHex = foregroundHex.slice(0, 7);
+    const alpha = parseInt(foregroundHex.slice(7, 9), 16) / 255;
+    const fgRgb = hexToRgb(baseHex)!;
+    const bgRgb = hexToRgb(backgroundHex)!;
+    const blended = alphaBlend(fgRgb, bgRgb, alpha);
+    const ratio = getContrastRatio(blended, bgRgb);
+    assert.ok(
+        ratio >= DARK_CONTRAST_TARGET,
+        `${label} blended contrast is ${ratio.toFixed(2)}, expected >= ${DARK_CONTRAST_TARGET}`
+    );
+}
 
 function makeConfig(overrides: Partial<ProjectColorConfig>): ProjectColorConfig {
     return {
@@ -56,6 +86,8 @@ suite('uiApplier - getAllManagedColorKeys', () => {
         assert.ok(keys.includes('activityBar.foreground'));
         assert.ok(keys.includes('activityBar.inactiveForeground'));
         assert.ok(keys.includes('activityBar.activeBorder'));
+        assert.ok(keys.includes('activityBarBadge.background'));
+        assert.ok(keys.includes('activityBarBadge.foreground'));
     });
 
     test('includes status bar keys', () => {
@@ -63,6 +95,8 @@ suite('uiApplier - getAllManagedColorKeys', () => {
         assert.ok(keys.includes('statusBar.background'));
         assert.ok(keys.includes('statusBar.foreground'));
         assert.ok(keys.includes('statusBar.noFolderBackground'));
+        assert.ok(keys.includes('statusBarItem.remoteBackground'));
+        assert.ok(keys.includes('statusBarItem.remoteForeground'));
     });
 
     test('includes tab bar keys', () => {
@@ -75,6 +109,14 @@ suite('uiApplier - getAllManagedColorKeys', () => {
         const keys = getAllManagedColorKeys();
         assert.ok(keys.includes('sideBar.background'));
         assert.ok(keys.includes('sideBar.foreground'));
+        assert.ok(keys.includes('sideBarTitle.foreground'));
+        assert.ok(keys.includes('sideBarSectionHeader.foreground'));
+        assert.ok(keys.includes('icon.foreground'));
+        assert.ok(keys.includes('list.activeSelectionForeground'));
+        assert.ok(keys.includes('list.inactiveSelectionForeground'));
+        assert.ok(keys.includes('list.hoverForeground'));
+        assert.ok(keys.includes('list.focusForeground'));
+        assert.ok(keys.includes('list.focusHighlightForeground'));
     });
 
     test('includes focusBorder', () => {
@@ -175,7 +217,7 @@ suite('uiApplier - buildColorCustomizations', () => {
         );
     });
 
-    test('activity bar icon foreground meets 4.5:1 contrast on mid-luminance palette', () => {
+    test('activity bar background meets 7:1 contrast with white on mid-luminance palette', () => {
         const midPalette: ColorPalette = {
             primary: '#808080',
             primaryForeground: '#000000',
@@ -189,13 +231,14 @@ suite('uiApplier - buildColorCustomizations', () => {
         const config = makeConfig({ colorActivityBar: true });
         const result = buildColorCustomizations(midPalette, config);
 
-        const fgRgb = hexToRgb(result['activityBar.foreground'])!;
-        const bgRgb = hexToRgb(result['activityBar.background'])!;
-        const ratio = getContrastRatio(fgRgb, bgRgb);
-        assert.ok(ratio >= 4.5, `Activity bar foreground contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+        assertWhiteContrast(result['activityBar.background'], 'Activity bar background');
+        assert.ok(
+            result['activityBar.foreground'].startsWith(WHITE_HEX),
+            'Activity bar foreground should be white'
+        );
     });
 
-    test('activity bar inactive foreground meets 4.5:1 when alpha-blended', () => {
+    test('activity bar inactive foreground meets 7:1 when alpha-blended', () => {
         const midPalette: ColorPalette = {
             primary: '#808080',
             primaryForeground: '#000000',
@@ -211,17 +254,14 @@ suite('uiApplier - buildColorCustomizations', () => {
 
         const inactiveFg = result['activityBar.inactiveForeground'];
         assert.ok(inactiveFg.length === 9, 'inactive foreground should have alpha suffix');
-
-        const baseHex = inactiveFg.slice(0, 7);
-        const alpha = parseInt(inactiveFg.slice(7, 9), 16) / 255;
-        const fgRgb = hexToRgb(baseHex)!;
-        const bgRgb = hexToRgb(result['activityBar.background'])!;
-        const blended = alphaBlend(fgRgb, bgRgb, alpha);
-        const ratio = getContrastRatio(blended, bgRgb);
-        assert.ok(ratio >= 4.5, `Activity bar inactive blended contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+        assertAlphaForegroundContrast(
+            inactiveFg,
+            result['activityBar.background'],
+            'Activity bar inactive foreground'
+        );
     });
 
-    test('status bar foreground meets 4.5:1 contrast on tricky palette', () => {
+    test('status bar background meets 7:1 contrast with white on tricky palette', () => {
         const trickPalette: ColorPalette = {
             primary: '#6b7b8d',
             primaryForeground: '#ffffff',
@@ -235,13 +275,14 @@ suite('uiApplier - buildColorCustomizations', () => {
         const config = makeConfig({ colorStatusBar: true });
         const result = buildColorCustomizations(trickPalette, config);
 
-        const fgRgb = hexToRgb(result['statusBar.foreground'])!;
-        const bgRgb = hexToRgb(result['statusBar.background'])!;
-        const ratio = getContrastRatio(fgRgb, bgRgb);
-        assert.ok(ratio >= 4.5, `Status bar foreground contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+        assertWhiteContrast(result['statusBar.background'], 'Status bar background');
+        assert.ok(
+            result['statusBar.foreground'].startsWith(WHITE_HEX),
+            'Status bar foreground should be white'
+        );
     });
 
-    test('sidebar foreground meets 4.5:1 contrast', () => {
+    test('sidebar background meets 7:1 contrast with white', () => {
         const midPalette: ColorPalette = {
             primary: '#808080',
             primaryForeground: '#000000',
@@ -255,13 +296,14 @@ suite('uiApplier - buildColorCustomizations', () => {
         const config = makeConfig({ colorSideBar: true });
         const result = buildColorCustomizations(midPalette, config);
 
-        const fgRgb = hexToRgb(result['sideBar.foreground'])!;
-        const bgRgb = hexToRgb(result['sideBar.background'])!;
-        const ratio = getContrastRatio(fgRgb, bgRgb);
-        assert.ok(ratio >= 4.5, `Sidebar foreground contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+        assertWhiteContrast(result['sideBar.background'], 'Side bar background');
+        assert.ok(
+            result['sideBar.foreground'].startsWith(WHITE_HEX),
+            'Side bar foreground should be white'
+        );
     });
 
-    test('title bar inactive foreground meets 4.5:1 when alpha-blended', () => {
+    test('title bar inactive foreground meets 7:1 when alpha-blended', () => {
         const midPalette: ColorPalette = {
             primary: '#808080',
             primaryForeground: '#000000',
@@ -277,46 +319,76 @@ suite('uiApplier - buildColorCustomizations', () => {
 
         const inactiveFg = result['titleBar.inactiveForeground'];
         assert.ok(inactiveFg.length === 9, 'inactive foreground should have alpha suffix');
-
-        const baseHex = inactiveFg.slice(0, 7);
-        const alpha = parseInt(inactiveFg.slice(7, 9), 16) / 255;
-        const fgRgb = hexToRgb(baseHex)!;
-        const bgRgb = hexToRgb(result['titleBar.inactiveBackground'])!;
-        const blended = alphaBlend(fgRgb, bgRgb, alpha);
-        const ratio = getContrastRatio(blended, bgRgb);
-        assert.ok(ratio >= 4.5, `Title bar inactive blended contrast is ${ratio.toFixed(2)}, expected >= 4.5`);
+        assertAlphaForegroundContrast(
+            inactiveFg,
+            result['titleBar.inactiveBackground'],
+            'Title bar inactive foreground'
+        );
     });
 
-    test('all foreground/background pairs meet 4.5:1 across multiple palettes', () => {
-        const trickyColors = ['#808080', '#555555', '#aaaaaa', '#e74c3c', '#2ecc71', '#3498db', '#f39c12'];
-        const fgBgPairs: Array<{ key: string; fgKey: string; bgKey: string }> = [
-            { key: 'activityBar', fgKey: 'activityBar.foreground', bgKey: 'activityBar.background' },
-            { key: 'statusBar', fgKey: 'statusBar.foreground', bgKey: 'statusBar.background' },
-            { key: 'sideBar', fgKey: 'sideBar.foreground', bgKey: 'sideBar.background' },
+    test('all section backgrounds meet 7:1 with white across tricky palettes', () => {
+        const trickyColors = ['#ff8c00', '#808080', '#e74c3c', '#2ecc71', '#3498db', '#f39c12'];
+        const backgroundKeys = [
+            'titleBar.activeBackground',
+            'activityBar.background',
+            'statusBar.background',
+            'tab.activeBackground',
+            'sideBar.background',
+            'activityBarBadge.background',
+            'statusBarItem.remoteBackground'
         ];
 
         for (const baseColor of trickyColors) {
             const palette = generatePalette(baseColor, 'dominant', 4.5);
             const config = makeConfig({
+                colorTitleBar: true,
                 colorActivityBar: true,
                 colorStatusBar: true,
+                colorTabBar: true,
                 colorSideBar: true
             });
             const result = buildColorCustomizations(palette, config);
 
-            for (const pair of fgBgPairs) {
-                const fg = result[pair.fgKey];
-                const bg = result[pair.bgKey];
-                if (!fg || !bg) { continue; }
-
-                const fgRgb = hexToRgb(fg.slice(0, 7))!;
-                const bgRgb = hexToRgb(bg)!;
-                const ratio = getContrastRatio(fgRgb, bgRgb);
-                assert.ok(
-                    ratio >= 4.5,
-                    `${pair.fgKey} contrast on base ${baseColor} is ${ratio.toFixed(2)}, expected >= 4.5`
-                );
+            for (const key of backgroundKeys) {
+                const bg = result[key];
+                if (!bg) { continue; }
+                assertWhiteContrast(bg, `${key} on base ${baseColor}`);
             }
+        }
+    });
+
+    test('new sub-element foreground keys are white for colored side bar', () => {
+        const config = makeConfig({ colorSideBar: true });
+        const result = buildColorCustomizations(TEST_PALETTE, config);
+
+        const keys = [
+            'sideBar.foreground',
+            'sideBarTitle.foreground',
+            'sideBarSectionHeader.foreground',
+            'icon.foreground',
+            'list.activeSelectionForeground',
+            'list.inactiveSelectionForeground',
+            'list.hoverForeground',
+            'list.focusForeground',
+            'list.focusHighlightForeground'
+        ];
+
+        for (const key of keys) {
+            assert.ok(result[key].startsWith(WHITE_HEX), `${key} should be white`);
+        }
+    });
+
+    test('badge and remote foreground keys are white when sections are colored', () => {
+        const config = makeConfig({ colorActivityBar: true, colorStatusBar: true });
+        const result = buildColorCustomizations(TEST_PALETTE, config);
+
+        const keys = [
+            'activityBarBadge.foreground',
+            'statusBarItem.remoteForeground'
+        ];
+
+        for (const key of keys) {
+            assert.ok(result[key].startsWith(WHITE_HEX), `${key} should be white`);
         }
     });
 });
