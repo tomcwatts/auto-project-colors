@@ -232,7 +232,7 @@ export function getContrastingForeground(backgroundColor: RGB, contrastTarget: n
  * Ensures a background is dark enough that white text meets the target contrast ratio.
  * Always darkens (never lightens) until white contrast is >= target.
  */
-export function ensureDarkBackground(backgroundHex: string, contrastTarget: number = 7): string {
+export function ensureDarkBackground(backgroundHex: string, contrastTarget: number = 4.5): string {
     const bgRgb = hexToRgb(backgroundHex);
     if (!bgRgb) {
         return backgroundHex;

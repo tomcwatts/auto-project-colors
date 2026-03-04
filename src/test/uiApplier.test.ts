@@ -4,7 +4,7 @@ import { ProjectColorConfig } from '../utils/config';
 import { hexToRgb, getContrastRatio, alphaBlend } from '../utils/colorValidation';
 import { ColorPalette, generatePalette } from '../colors/colorGenerator';
 
-const DARK_CONTRAST_TARGET = 7;
+const CONTRAST_TARGET = 4.5;
 const WHITE_HEX = '#ffffff';
 
 const TEST_PALETTE: ColorPalette = {
@@ -23,8 +23,8 @@ function assertWhiteContrast(backgroundHex: string, label: string): void {
     const whiteRgb = hexToRgb(WHITE_HEX)!;
     const ratio = getContrastRatio(bgRgb, whiteRgb);
     assert.ok(
-        ratio >= DARK_CONTRAST_TARGET,
-        `${label} contrast is ${ratio.toFixed(2)}, expected >= ${DARK_CONTRAST_TARGET}`
+        ratio >= CONTRAST_TARGET,
+        `${label} contrast is ${ratio.toFixed(2)}, expected >= ${CONTRAST_TARGET}`
     );
 }
 
@@ -40,8 +40,8 @@ function assertAlphaForegroundContrast(
     const blended = alphaBlend(fgRgb, bgRgb, alpha);
     const ratio = getContrastRatio(blended, bgRgb);
     assert.ok(
-        ratio >= DARK_CONTRAST_TARGET,
-        `${label} blended contrast is ${ratio.toFixed(2)}, expected >= ${DARK_CONTRAST_TARGET}`
+        ratio >= CONTRAST_TARGET,
+        `${label} blended contrast is ${ratio.toFixed(2)}, expected >= ${CONTRAST_TARGET}`
     );
 }
 
@@ -217,7 +217,7 @@ suite('uiApplier - buildColorCustomizations', () => {
         );
     });
 
-    test('activity bar background meets 7:1 contrast with white on mid-luminance palette', () => {
+    test('activity bar background meets 4.5:1 contrast with white on mid-luminance palette', () => {
         const midPalette: ColorPalette = {
             primary: '#808080',
             primaryForeground: '#000000',
@@ -238,7 +238,7 @@ suite('uiApplier - buildColorCustomizations', () => {
         );
     });
 
-    test('activity bar inactive foreground meets 7:1 when alpha-blended', () => {
+    test('activity bar inactive foreground meets 4.5:1 when alpha-blended', () => {
         const midPalette: ColorPalette = {
             primary: '#808080',
             primaryForeground: '#000000',
@@ -261,7 +261,7 @@ suite('uiApplier - buildColorCustomizations', () => {
         );
     });
 
-    test('status bar background meets 7:1 contrast with white on tricky palette', () => {
+    test('status bar background meets 4.5:1 contrast with white on tricky palette', () => {
         const trickPalette: ColorPalette = {
             primary: '#6b7b8d',
             primaryForeground: '#ffffff',
@@ -282,7 +282,7 @@ suite('uiApplier - buildColorCustomizations', () => {
         );
     });
 
-    test('sidebar background meets 7:1 contrast with white', () => {
+    test('sidebar background meets 4.5:1 contrast with white', () => {
         const midPalette: ColorPalette = {
             primary: '#808080',
             primaryForeground: '#000000',
@@ -303,7 +303,7 @@ suite('uiApplier - buildColorCustomizations', () => {
         );
     });
 
-    test('title bar inactive foreground meets 7:1 when alpha-blended', () => {
+    test('title bar inactive foreground meets 4.5:1 when alpha-blended', () => {
         const midPalette: ColorPalette = {
             primary: '#808080',
             primaryForeground: '#000000',
@@ -326,7 +326,7 @@ suite('uiApplier - buildColorCustomizations', () => {
         );
     });
 
-    test('all section backgrounds meet 7:1 with white across tricky palettes', () => {
+    test('all section backgrounds meet 4.5:1 with white across tricky palettes', () => {
         const trickyColors = ['#ff8c00', '#808080', '#e74c3c', '#2ecc71', '#3498db', '#f39c12'];
         const backgroundKeys = [
             'titleBar.activeBackground',

@@ -11,17 +11,21 @@
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
     "typescript.tsc.autoDetect": "off",
     "workbench.colorCustomizations": {
-        "titleBar.activeBackground": "#f18e51",
-        "titleBar.activeForeground": "#000000",
-        "titleBar.inactiveBackground": "#f18e51",
-        "titleBar.inactiveForeground": "#00000099",
-        "activityBar.background": "#e36212",
-        "activityBar.foreground": "#000000",
-        "activityBar.inactiveForeground": "#00000099",
-        "activityBar.activeBorder": "#000000",
-        "statusBar.background": "#f18e51",
-        "statusBar.foreground": "#000000",
-        "statusBar.noFolderBackground": "#e36212",
-        "focusBorder": "#f18e51"
+        "titleBar.activeBackground": "#c44f02",
+        "titleBar.activeForeground": "#ffffff",
+        "titleBar.inactiveBackground": "#c44f02",
+        "titleBar.inactiveForeground": "#fffffffa",
+        "activityBar.background": "#c44f02",
+        "activityBar.foreground": "#ffffff",
+        "activityBar.inactiveForeground": "#fffffffa",
+        "activityBar.activeBorder": "#ffffff",
+        "activityBarBadge.background": "#c44f02",
+        "activityBarBadge.foreground": "#ffffff",
+        "statusBar.background": "#c44f02",
+        "statusBar.foreground": "#ffffff",
+        "statusBar.noFolderBackground": "#c44f02",
+        "statusBarItem.remoteBackground": "#c44f02",
+        "statusBarItem.remoteForeground": "#ffffff",
+        "focusBorder": "#fd8f47"
     }
 }

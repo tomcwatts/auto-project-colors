@@ -53,7 +53,7 @@ const COLOR_KEYS = {
     }
 };
 
-const DARK_BACKGROUND_CONTRAST_TARGET = 7;
+const MIN_BACKGROUND_CONTRAST_TARGET = 4.5;
 const FOREGROUND_BASE = '#ffffff';
 const INACTIVE_FOREGROUND_BASE = '#ffffff99';
 
@@ -128,24 +128,25 @@ export function buildColorCustomizations(
     config: ProjectColorConfig
 ): Record<string, string> {
     const colors: Record<string, string> = {};
+    const backgroundContrastTarget = Math.max(MIN_BACKGROUND_CONTRAST_TARGET, config.contrastTarget);
 
     if (config.colorTitleBar) {
         const titleBarColors = adjustPaletteForContext(palette, 'titleBar');
         const titleBarBackground = ensureDarkBackground(
             titleBarColors.background,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         colors[COLOR_KEYS.titleBar.background] = titleBarBackground;
         colors[COLOR_KEYS.titleBar.foreground] = ensureIconContrast(
             FOREGROUND_BASE,
             titleBarBackground,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         colors[COLOR_KEYS.titleBar.inactiveBackground] = titleBarBackground;
         colors[COLOR_KEYS.titleBar.inactiveForeground] = ensureIconContrast(
             INACTIVE_FOREGROUND_BASE,
             titleBarBackground,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
     }
 
@@ -153,17 +154,17 @@ export function buildColorCustomizations(
         const activityBarColors = adjustPaletteForContext(palette, 'activityBar');
         const activityBarBackground = ensureDarkBackground(
             activityBarColors.background,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         const activityBarForeground = ensureIconContrast(
             FOREGROUND_BASE,
             activityBarBackground,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         const activityBarInactiveForeground = ensureIconContrast(
             INACTIVE_FOREGROUND_BASE,
             activityBarBackground,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         colors[COLOR_KEYS.activityBar.background] = activityBarBackground;
         colors[COLOR_KEYS.activityBar.foreground] = activityBarForeground;
@@ -177,19 +178,19 @@ export function buildColorCustomizations(
         const statusBarColors = adjustPaletteForContext(palette, 'statusBar');
         const statusBarBackground = ensureDarkBackground(
             statusBarColors.background,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         const statusBarForeground = ensureIconContrast(
             FOREGROUND_BASE,
             statusBarBackground,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         colors[COLOR_KEYS.statusBar.background] = statusBarBackground;
         colors[COLOR_KEYS.statusBar.foreground] = statusBarForeground;
         // Keep debugging/no-folder backgrounds similar but slightly different
         colors[COLOR_KEYS.statusBar.noFolderBackground] = ensureDarkBackground(
             palette.darkened,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         colors[COLOR_KEYS.statusBar.remoteBackground] = statusBarBackground;
         colors[COLOR_KEYS.statusBar.remoteForeground] = statusBarForeground;
@@ -199,12 +200,12 @@ export function buildColorCustomizations(
         const tabBarColors = adjustPaletteForContext(palette, 'tabBar');
         const tabBarBackground = ensureDarkBackground(
             tabBarColors.background,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         const tabBarForeground = ensureIconContrast(
             FOREGROUND_BASE,
             tabBarBackground,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         colors[COLOR_KEYS.tabBar.activeBackground] = tabBarBackground;
         colors[COLOR_KEYS.tabBar.activeForeground] = tabBarForeground;
@@ -215,12 +216,12 @@ export function buildColorCustomizations(
         const sideBarColors = adjustPaletteForContext(palette, 'sideBar');
         const sideBarBackground = ensureDarkBackground(
             sideBarColors.background,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         const sideBarForeground = ensureIconContrast(
             FOREGROUND_BASE,
             sideBarBackground,
-            DARK_BACKGROUND_CONTRAST_TARGET
+            backgroundContrastTarget
         );
         colors[COLOR_KEYS.sideBar.background] = sideBarBackground;
         colors[COLOR_KEYS.sideBar.foreground] = sideBarForeground;
