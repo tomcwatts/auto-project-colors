@@ -2,7 +2,7 @@
   "name": "auto-project-colors",
   "displayName": "Auto Project Colors",
   "description": "Automatically identify multiple VS Code projects at a glance. Reads your project favicon and applies its brand color to the title bar, activity bar, and status bar—zero configuration required.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "publisher": "tomwatts",
   "author": "Tom Watts",
   "license": "MIT",
